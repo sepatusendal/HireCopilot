@@ -2,7 +2,9 @@
 
 /*
  * HireCopilot design tokens — Modern Neubrutalism.
- * Dark mode is the default; `.light` / `[data-theme="light"]` overrides it.
+ * Light mode is the default (true neubrutalism: cream background, white cards,
+ * pure-black hard borders/shadows, saturated candy-bright accents).
+ * `.dark` / `[data-theme="dark"]` overrides it for the (future) theme toggle.
  */
 
 :root {
@@ -15,37 +17,38 @@
   --shadow-brutal-sm: 2px 2px 0 0 var(--color-border);
   --shadow-brutal-lg: 6px 6px 0 0 var(--color-border);
 
-  /* Dark theme (default) */
+  /* Light theme (default) */
+  --color-background: #fff9ec; /* warm cream */
+  --color-surface: #f3ecd9; /* slightly darker cream — sidebar, inputs */
+  --color-card: #ffffff;
+  --color-border: #000000;
+  --color-foreground: #000000;
+  --color-muted-foreground: #52525b;
+
+  /* Candy-bright neubrutalist accents — high saturation, black text on top */
+  --color-jobs: #2e5eff; /* electric blue */
+  --color-ai: #a855f7; /* vivid violet */
+  --color-mission: #ffd100; /* acid yellow */
+  --color-interview: #00c853; /* vivid green */
+  --color-warning: #ff7a1a; /* vivid orange */
+  --color-rejection: #ff4d4d; /* vivid coral red */
+
+  --color-jobs-foreground: #000000;
+  --color-ai-foreground: #000000;
+  --color-mission-foreground: #000000;
+  --color-interview-foreground: #000000;
+  --color-warning-foreground: #000000;
+  --color-rejection-foreground: #000000;
+}
+
+.dark,
+[data-theme="dark"] {
   --color-background: #121212;
   --color-surface: #1a1a1a;
   --color-card: #1e1e1e;
   --color-border: #f5f0e8;
   --color-foreground: #f5f0e8;
   --color-muted-foreground: #a3a3a3;
-
-  --color-jobs: #5b8def;
-  --color-ai: #a78bfa;
-  --color-mission: #facc15;
-  --color-interview: #4ade80;
-  --color-warning: #fb923c;
-  --color-rejection: #f87171;
-
-  --color-jobs-foreground: #0a0a0a;
-  --color-ai-foreground: #0a0a0a;
-  --color-mission-foreground: #0a0a0a;
-  --color-interview-foreground: #0a0a0a;
-  --color-warning-foreground: #0a0a0a;
-  --color-rejection-foreground: #0a0a0a;
-}
-
-.light,
-[data-theme="light"] {
-  --color-background: #f5f0e8; /* warm off-white */
-  --color-surface: #ffffff;
-  --color-card: #ffffff;
-  --color-border: #0a0a0a;
-  --color-foreground: #0a0a0a;
-  --color-muted-foreground: #52525b;
 }
 
 @theme inline {
