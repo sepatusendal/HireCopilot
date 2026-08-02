@@ -1,16 +1,10 @@
 import { MapPin, Wifi } from "lucide-react";
 import type { Application, Company, Job } from "@prisma/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, scoreAccent } from "@/lib/utils";
 import { matchResultSchema } from "@/lib/ai/types";
 
 type ApplicationWithJob = Application & { job: Job & { company: Company } };
-
-function scoreAccent(score: number): "interview" | "mission" | "warning" {
-  if (score >= 75) return "interview";
-  if (score >= 50) return "mission";
-  return "warning";
-}
 
 export function JobCard({ application }: { application: ApplicationWithJob }) {
   const parsed = matchResultSchema.safeParse(application.matchDetails);
