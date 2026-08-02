@@ -206,6 +206,7 @@ model Application {
   job        Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
   status     ApplicationStatus @default(NEW)
   matchScore Int?
+  matchDetails Json?
   resumeId   String?
   resume     Resume?           @relation(fields: [resumeId], references: [id])
   coverLetterId String?
