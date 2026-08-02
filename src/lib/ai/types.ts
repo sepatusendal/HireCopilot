@@ -13,7 +13,7 @@ export const matchResultSchema = z.object({
 
 export type MatchResult = z.infer<typeof matchResultSchema>;
 
-export interface MatchInput {
+export interface JobProfileInput {
   job: {
     title: string;
     description: string;
@@ -33,6 +33,10 @@ export interface MatchInput {
   };
 }
 
+export type MatchInput = JobProfileInput;
+export type CoverLetterInput = JobProfileInput;
+
 export interface AIProvider {
   matchJob(input: MatchInput): Promise<MatchResult>;
+  generateCoverLetter(input: CoverLetterInput): Promise<string>;
 }

@@ -1,17 +1,21 @@
 "use client";
 
-import { useTransition } from "react";
-import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { MapPin, Mail } from "lucide-react";
 import type { Application, ApplicationStatus, Company, Job } from "@prisma/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn, scoreAccent } from "@/lib/utils";
 import { updateApplicationStatusAction } from "@/features/applications/actions";
 import { ALL_STATUSES, STATUS_LABELS } from "@/features/applications/constants";
+import { generateCoverLetterAction } from "@/features/cover-letter/actions";
 
 export type ApplicationWithJob = Application & { job: Job & { company: Company } };
 
 export function ApplicationCard({ application }: { application: ApplicationWithJob }) {
   const [isPending, startTransition] = useTransition();
+  const [isGeneratingLetter, startGeneratingLetter] = useTransition();
+  const [letterError, setLetterError] = useState<string | null>(null);
   const score = application.matchScore ?? 0;
   const accent = scoreAccent(score);
 
@@ -61,6 +65,38 @@ export function ApplicationCard({ application }: { application: ApplicationWithJ
             </option>
           ))}
         </select>
+
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            disabled={isGeneratingLetter}
+            onClick={() =>
+              startGeneratingLetter(async () => {
+                setLetterError(null);
+                const result = await generateCoverLetterAction(application.id);
+                if (!result.success) {
+                  setLetterError(result.message ?? "Something went wrong.");
+                }
+              })
+            }
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-card px-2.5 py-1.5 text-xs font-bold shadow-brutal-sm transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Mail className="size-3.5" />
+            {isGeneratingLetter
+              ? "Writing…"
+              : application.coverLetterId
+                ? "Regenerate letter"
+                : "Generate letter"}
+          </button>
+          {application.coverLetterId && !isGeneratingLetter && (
+            <Link
+              href="/cover-letter"
+              className="rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-ai px-2.5 py-1.5 text-xs font-bold text-ai-foreground shadow-brutal-sm transition-transform hover:-translate-y-0.5"
+            >
+              View
+            </Link>
+          )}
+        </div>
+        {letterError && <p className="mt-2 text-xs font-bold text-rejection">{letterError}</p>}
       </CardContent>
     </Card>
   );

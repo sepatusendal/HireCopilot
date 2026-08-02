@@ -1,6 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { matchResultSchema, type AIProvider, type MatchInput, type MatchResult } from "@/lib/ai/types";
-import { buildMatchPrompt } from "@/lib/ai/prompt";
+import {
+  matchResultSchema,
+  type AIProvider,
+  type CoverLetterInput,
+  type MatchInput,
+  type MatchResult,
+} from "@/lib/ai/types";
+import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
 
 const REQUEST_TIMEOUT_MS = 20_000;
 
@@ -55,4 +61,18 @@ async function matchJob(input: MatchInput): Promise<MatchResult> {
   return matchResultSchema.parse(JSON.parse(text));
 }
 
-export const geminiProvider: AIProvider = { matchJob };
+async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
+  const response = await getClient().models.generateContent({
+    model: "gemini-flash-latest",
+    contents: buildCoverLetterPrompt(input),
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error("Gemini did not return a cover letter.");
+  }
+
+  return text.trim();
+}
+
+export const geminiProvider: AIProvider = { matchJob, generateCoverLetter };

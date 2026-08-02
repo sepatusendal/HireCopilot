@@ -1,6 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { matchResultSchema, type AIProvider, type MatchInput, type MatchResult } from "@/lib/ai/types";
-import { buildMatchPrompt } from "@/lib/ai/prompt";
+import {
+  matchResultSchema,
+  type AIProvider,
+  type CoverLetterInput,
+  type MatchInput,
+  type MatchResult,
+} from "@/lib/ai/types";
+import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
 
 let client: Anthropic | undefined;
 function getClient(): Anthropic {
@@ -55,4 +61,19 @@ async function matchJob(input: MatchInput): Promise<MatchResult> {
   return matchResultSchema.parse(toolUseBlock.input);
 }
 
-export const claudeProvider: AIProvider = { matchJob };
+async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
+  const response = await getClient().messages.create({
+    model: "claude-sonnet-4-5",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: buildCoverLetterPrompt(input) }],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("Claude did not return a cover letter.");
+  }
+
+  return textBlock.text.trim();
+}
+
+export const claudeProvider: AIProvider = { matchJob, generateCoverLetter };

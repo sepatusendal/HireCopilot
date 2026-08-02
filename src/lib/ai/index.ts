@@ -21,5 +21,7 @@ function resolveProvider(): AIProvider {
 }
 
 export const matchJob: AIProvider["matchJob"] = (input) => resolveProvider().matchJob(input);
+export const generateCoverLetter: AIProvider["generateCoverLetter"] = (input) =>
+  resolveProvider().generateCoverLetter(input);
 
-export type { MatchInput, MatchResult } from "@/lib/ai/types";
+export type { CoverLetterInput, MatchInput, MatchResult } from "@/lib/ai/types";

@@ -1,6 +1,12 @@
 import OpenAI from "openai";
-import { matchResultSchema, type AIProvider, type MatchInput, type MatchResult } from "@/lib/ai/types";
-import { buildMatchPrompt } from "@/lib/ai/prompt";
+import {
+  matchResultSchema,
+  type AIProvider,
+  type CoverLetterInput,
+  type MatchInput,
+  type MatchResult,
+} from "@/lib/ai/types";
+import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
 
 let client: OpenAI | undefined;
 function getClient(): OpenAI {
@@ -51,4 +57,18 @@ async function matchJob(input: MatchInput): Promise<MatchResult> {
   return matchResultSchema.parse(JSON.parse(content));
 }
 
-export const openaiProvider: AIProvider = { matchJob };
+async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
+  const response = await getClient().chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: buildCoverLetterPrompt(input) }],
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("OpenAI did not return a cover letter.");
+  }
+
+  return content.trim();
+}
+
+export const openaiProvider: AIProvider = { matchJob, generateCoverLetter };
