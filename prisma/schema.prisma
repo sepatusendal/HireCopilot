@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Auth (Better Auth — Prisma adapter shape) ──────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  profile      Profile?
+  applications Application[]
+  resumes      Resume[]
+  coverLetters CoverLetter[]
+  activities   Activity[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ─── Career profile ──────────────────────────────────────────────────────
+
+model Profile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline         String?
+  summary          String?
+  targetRoles      String[] @default([])
+  experienceLevel  ExperienceLevel?
+  location         String?
+  openToRemote     Boolean  @default(true)
+  linkedinUrl      String?
+  githubUrl        String?
+  portfolioUrl     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  experiences Experience[]
+  projects    ProjectItem[]
+  skills      Skill[]
+
+  @@map("profile")
+}
+
+enum ExperienceLevel {
+  ENTRY
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  EXECUTIVE
+}
+
+model Experience {
+  id          String    @id @default(cuid())
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  company     String
+  title       String
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean   @default(false)
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("experience")
+}
+
+model ProjectItem {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  url         String?
+  tags        String[] @default([])
+  category    ProjectCategory @default(GENERAL)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("project_item")
+}
+
+enum ProjectCategory {
+  GENERAL
+  CRM
+  PRODUCT
+  ENGINEERING
+  DESIGN
+  MARKETING
+}
+
+model Skill {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+
+  @@unique([profileId, name])
+  @@map("skill")
+}
+
+// ─── Jobs & applications ────────────────────────────────────────────────
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  website   String?
+  logoUrl   String?
+  industry  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs Job[]
+
+  @@unique([name])
+  @@map("company")
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  location    String?
+  isRemote    Boolean  @default(false)
+  source      String
+  sourceUrl   String   @unique
+  salaryMin   Int?
+  salaryMax   Int?
+  postedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications Application[]
+
+  @@map("job")
+}
+
+model Application {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId      String
+  job        Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status     ApplicationStatus @default(NEW)
+  matchScore Int?
+  resumeId   String?
+  resume     Resume?           @relation(fields: [resumeId], references: [id])
+  coverLetterId String?
+  coverLetter   CoverLetter?   @relation(fields: [coverLetterId], references: [id])
+  appliedAt  DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@unique([userId, jobId])
+  @@map("application")
+}
+
+enum ApplicationStatus {
+  NEW
+  INTERESTED
+  READY
+  APPLIED
+  VIEWED
+  RECRUITER_CONTACT
+  INTERVIEW
+  TECHNICAL_TEST
+  OFFER
+  REJECTED
+  ARCHIVED
+}
+
+model Resume {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  fileUrl   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+
+  @@map("resume")
+}
+
+model CoverLetter {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+
+  @@map("cover_letter")
+}
+
+// ─── AI activity log ─────────────────────────────────────────────────────
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("activity")
+}

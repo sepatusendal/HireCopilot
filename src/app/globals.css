@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/*
+ * HireCopilot design tokens — Modern Neubrutalism.
+ * Dark mode is the default; `.light` / `[data-theme="light"]` overrides it.
+ */
+
+:root {
+  --radius: 0.75rem;
+  --border-width: 3px;
+
+  --shadow-x: 4px;
+  --shadow-y: 4px;
+  --shadow-brutal: var(--shadow-x) var(--shadow-y) 0 0 var(--color-border);
+  --shadow-brutal-sm: 2px 2px 0 0 var(--color-border);
+  --shadow-brutal-lg: 6px 6px 0 0 var(--color-border);
+
+  /* Dark theme (default) */
+  --color-background: #121212;
+  --color-surface: #1a1a1a;
+  --color-card: #1e1e1e;
+  --color-border: #f5f0e8;
+  --color-foreground: #f5f0e8;
+  --color-muted-foreground: #a3a3a3;
+
+  --color-jobs: #5b8def;
+  --color-ai: #a78bfa;
+  --color-mission: #facc15;
+  --color-interview: #4ade80;
+  --color-warning: #fb923c;
+  --color-rejection: #f87171;
+
+  --color-jobs-foreground: #0a0a0a;
+  --color-ai-foreground: #0a0a0a;
+  --color-mission-foreground: #0a0a0a;
+  --color-interview-foreground: #0a0a0a;
+  --color-warning-foreground: #0a0a0a;
+  --color-rejection-foreground: #0a0a0a;
+}
+
+.light,
+[data-theme="light"] {
+  --color-background: #f5f0e8; /* warm off-white */
+  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-border: #0a0a0a;
+  --color-foreground: #0a0a0a;
+  --color-muted-foreground: #52525b;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-card: var(--color-card);
+  --color-border: var(--color-border);
+  --color-foreground: var(--color-foreground);
+  --color-muted-foreground: var(--color-muted-foreground);
+
+  --color-jobs: var(--color-jobs);
+  --color-ai: var(--color-ai);
+  --color-mission: var(--color-mission);
+  --color-interview: var(--color-interview);
+  --color-warning: var(--color-warning);
+  --color-rejection: var(--color-rejection);
+
+  --color-jobs-foreground: var(--color-jobs-foreground);
+  --color-ai-foreground: var(--color-ai-foreground);
+  --color-mission-foreground: var(--color-mission-foreground);
+  --color-interview-foreground: var(--color-interview-foreground);
+  --color-warning-foreground: var(--color-warning-foreground);
+  --color-rejection-foreground: var(--color-rejection-foreground);
+
+  --radius-brutal: var(--radius);
+
+  --shadow-brutal: var(--shadow-brutal);
+  --shadow-brutal-sm: var(--shadow-brutal-sm);
+  --shadow-brutal-lg: var(--shadow-brutal-lg);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+* {
+  border-color: var(--color-border);
+}
