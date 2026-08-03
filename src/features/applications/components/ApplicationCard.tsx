@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { MapPin, Mail } from "lucide-react";
+import { MapPin, Mail, FileText } from "lucide-react";
 import type { Application, ApplicationStatus, Company, Job } from "@prisma/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn, scoreAccent } from "@/lib/utils";
 import { updateApplicationStatusAction } from "@/features/applications/actions";
 import { ALL_STATUSES, STATUS_LABELS } from "@/features/applications/constants";
 import { generateCoverLetterAction } from "@/features/cover-letter/actions";
+import { generateResumeAction } from "@/features/resume/actions";
 
 export type ApplicationWithJob = Application & { job: Job & { company: Company } };
 
@@ -16,6 +17,8 @@ export function ApplicationCard({ application }: { application: ApplicationWithJ
   const [isPending, startTransition] = useTransition();
   const [isGeneratingLetter, startGeneratingLetter] = useTransition();
   const [letterError, setLetterError] = useState<string | null>(null);
+  const [isGeneratingResume, startGeneratingResume] = useTransition();
+  const [resumeError, setResumeError] = useState<string | null>(null);
   const score = application.matchScore ?? 0;
   const accent = scoreAccent(score);
 
@@ -97,6 +100,38 @@ export function ApplicationCard({ application }: { application: ApplicationWithJ
           )}
         </div>
         {letterError && <p className="mt-2 text-xs font-bold text-rejection">{letterError}</p>}
+
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            disabled={isGeneratingResume}
+            onClick={() =>
+              startGeneratingResume(async () => {
+                setResumeError(null);
+                const result = await generateResumeAction(application.id);
+                if (!result.success) {
+                  setResumeError(result.message ?? "Something went wrong.");
+                }
+              })
+            }
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-card px-2.5 py-1.5 text-xs font-bold shadow-brutal-sm transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FileText className="size-3.5" />
+            {isGeneratingResume
+              ? "Writing…"
+              : application.resumeId
+                ? "Regenerate resume"
+                : "Generate resume"}
+          </button>
+          {application.resumeId && !isGeneratingResume && (
+            <Link
+              href="/resume"
+              className="rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-ai px-2.5 py-1.5 text-xs font-bold text-ai-foreground shadow-brutal-sm transition-transform hover:-translate-y-0.5"
+            >
+              View
+            </Link>
+          )}
+        </div>
+        {resumeError && <p className="mt-2 text-xs font-bold text-rejection">{resumeError}</p>}
       </CardContent>
     </Card>
   );

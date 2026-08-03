@@ -238,7 +238,8 @@ model Resume {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   label     String
-  fileUrl   String
+  content   Json?
+  fileUrl   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

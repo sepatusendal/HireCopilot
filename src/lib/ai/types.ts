@@ -35,8 +35,24 @@ export interface JobProfileInput {
 
 export type MatchInput = JobProfileInput;
 export type CoverLetterInput = JobProfileInput;
+export type ResumeInput = JobProfileInput;
+
+export const resumeResultSchema = z.object({
+  summary: z.string(),
+  skills: z.array(z.string()).max(15),
+  experiences: z.array(
+    z.object({
+      title: z.string(),
+      company: z.string(),
+      bullets: z.array(z.string()).max(5),
+    })
+  ),
+});
+
+export type ResumeResult = z.infer<typeof resumeResultSchema>;
 
 export interface AIProvider {
   matchJob(input: MatchInput): Promise<MatchResult>;
   generateCoverLetter(input: CoverLetterInput): Promise<string>;
+  generateResume(input: ResumeInput): Promise<ResumeResult>;
 }

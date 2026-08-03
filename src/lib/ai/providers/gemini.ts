@@ -1,12 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import {
   matchResultSchema,
+  resumeResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type MatchInput,
   type MatchResult,
+  type ResumeInput,
+  type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
 const REQUEST_TIMEOUT_MS = 20_000;
 
@@ -75,4 +78,43 @@ async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
   return text.trim();
 }
 
-export const geminiProvider: AIProvider = { matchJob, generateCoverLetter };
+const resumeResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    summary: { type: Type.STRING },
+    skills: { type: Type.ARRAY, items: { type: Type.STRING } },
+    experiences: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          company: { type: Type.STRING },
+          bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+        required: ["title", "company", "bullets"],
+      },
+    },
+  },
+  required: ["summary", "skills", "experiences"],
+};
+
+async function generateResume(input: ResumeInput): Promise<ResumeResult> {
+  const response = await getClient().models.generateContent({
+    model: "gemini-flash-latest",
+    contents: buildResumePrompt(input),
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: resumeResponseSchema,
+    },
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error("Gemini did not return resume content.");
+  }
+
+  return resumeResultSchema.parse(JSON.parse(text));
+}
+
+export const geminiProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };

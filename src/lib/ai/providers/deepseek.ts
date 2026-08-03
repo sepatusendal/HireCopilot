@@ -1,12 +1,15 @@
 import OpenAI from "openai";
 import {
   matchResultSchema,
+  resumeResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type MatchInput,
   type MatchResult,
+  type ResumeInput,
+  type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
 const MODEL = "deepseek-chat";
 
@@ -51,4 +54,22 @@ async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
   return content.trim();
 }
 
-export const deepseekProvider: AIProvider = { matchJob, generateCoverLetter };
+const RESUME_JSON_INSTRUCTION =
+  '\n\nRespond with ONLY a raw JSON object (no markdown fences) with exactly these keys: summary (string), skills (array of strings, max 15), experiences (array of objects with keys title, company, bullets — bullets is an array of up to 5 strings). The "experiences" array must have exactly one entry per numbered experience, in the same order.';
+
+async function generateResume(input: ResumeInput): Promise<ResumeResult> {
+  const response = await getClient().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: "user", content: buildResumePrompt(input) + RESUME_JSON_INSTRUCTION }],
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("DeepSeek did not return resume content.");
+  }
+
+  return resumeResultSchema.parse(JSON.parse(content));
+}
+
+export const deepseekProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };

@@ -1,14 +1,20 @@
 import OpenAI from "openai";
 import {
   matchResultSchema,
+  resumeResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type MatchInput,
   type MatchResult,
+  type ResumeInput,
+  type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
-const MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+// OpenRouter's free-tier model lineup changes over time (models get deprecated
+// or rate-limited upstream) — if this one starts failing, check
+// https://openrouter.ai/models?max_price=0 for a current alternative.
+const MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 
 let client: OpenAI | undefined;
 function getClient(): OpenAI {
@@ -51,4 +57,22 @@ async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
   return content.trim();
 }
 
-export const openrouterProvider: AIProvider = { matchJob, generateCoverLetter };
+const RESUME_JSON_INSTRUCTION =
+  '\n\nRespond with ONLY a raw JSON object (no markdown fences) with exactly these keys: summary (string), skills (array of strings, max 15), experiences (array of objects with keys title, company, bullets — bullets is an array of up to 5 strings). The "experiences" array must have exactly one entry per numbered experience, in the same order.';
+
+async function generateResume(input: ResumeInput): Promise<ResumeResult> {
+  const response = await getClient().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: "user", content: buildResumePrompt(input) + RESUME_JSON_INSTRUCTION }],
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("OpenRouter did not return resume content.");
+  }
+
+  return resumeResultSchema.parse(JSON.parse(content));
+}
+
+export const openrouterProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };

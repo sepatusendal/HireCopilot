@@ -3,7 +3,7 @@ import { geminiProvider } from "@/lib/ai/providers/gemini";
 import { openaiProvider } from "@/lib/ai/providers/openai";
 import { openrouterProvider } from "@/lib/ai/providers/openrouter";
 import { deepseekProvider } from "@/lib/ai/providers/deepseek";
-import type { AIProvider, CoverLetterInput, MatchInput } from "@/lib/ai/types";
+import type { AIProvider, CoverLetterInput, MatchInput, ResumeInput } from "@/lib/ai/types";
 
 const providers = {
   claude: claudeProvider,
@@ -55,5 +55,7 @@ async function withFallback<TInput, TOutput>(
 export const matchJob = (input: MatchInput) => withFallback((provider, i) => provider.matchJob(i), input);
 export const generateCoverLetter = (input: CoverLetterInput) =>
   withFallback((provider, i) => provider.generateCoverLetter(i), input);
+export const generateResume = (input: ResumeInput) =>
+  withFallback((provider, i) => provider.generateResume(i), input);
 
-export type { CoverLetterInput, MatchInput, MatchResult } from "@/lib/ai/types";
+export type { CoverLetterInput, MatchInput, MatchResult, ResumeInput, ResumeResult } from "@/lib/ai/types";

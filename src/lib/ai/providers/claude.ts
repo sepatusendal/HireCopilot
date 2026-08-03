@@ -1,12 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
   matchResultSchema,
+  resumeResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type MatchInput,
   type MatchResult,
+  type ResumeInput,
+  type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
 let client: Anthropic | undefined;
 function getClient(): Anthropic {
@@ -76,4 +79,48 @@ async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
   return textBlock.text.trim();
 }
 
-export const claudeProvider: AIProvider = { matchJob, generateCoverLetter };
+const RESUME_TOOL_NAME = "provide_resume_content";
+
+const resumeTool: Anthropic.Tool = {
+  name: RESUME_TOOL_NAME,
+  description: "Provide tailored resume content grounded strictly in the candidate's real profile data.",
+  input_schema: {
+    type: "object",
+    properties: {
+      summary: { type: "string" },
+      skills: { type: "array", items: { type: "string" }, maxItems: 15 },
+      experiences: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            company: { type: "string" },
+            bullets: { type: "array", items: { type: "string" }, maxItems: 5 },
+          },
+          required: ["title", "company", "bullets"],
+        },
+      },
+    },
+    required: ["summary", "skills", "experiences"],
+  },
+};
+
+async function generateResume(input: ResumeInput): Promise<ResumeResult> {
+  const response = await getClient().messages.create({
+    model: "claude-sonnet-5",
+    max_tokens: 1536,
+    tools: [resumeTool],
+    tool_choice: { type: "tool", name: RESUME_TOOL_NAME },
+    messages: [{ role: "user", content: `${buildResumePrompt(input)}\n\nCall the ${RESUME_TOOL_NAME} tool with your result.` }],
+  });
+
+  const toolUseBlock = response.content.find((block) => block.type === "tool_use");
+  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
+    throw new Error("Claude did not return resume content.");
+  }
+
+  return resumeResultSchema.parse(toolUseBlock.input);
+}
+
+export const claudeProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };
