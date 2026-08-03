@@ -46,7 +46,7 @@ const matchTool: Anthropic.Tool = {
 
 async function matchJob(input: MatchInput): Promise<MatchResult> {
   const response = await getClient().messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-5",
     max_tokens: 1024,
     tools: [matchTool],
     tool_choice: { type: "tool", name: MATCH_TOOL_NAME },
@@ -63,7 +63,7 @@ async function matchJob(input: MatchInput): Promise<MatchResult> {
 
 async function generateCoverLetter(input: CoverLetterInput): Promise<string> {
   const response = await getClient().messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-5",
     max_tokens: 1024,
     messages: [{ role: "user", content: buildCoverLetterPrompt(input) }],
   });
