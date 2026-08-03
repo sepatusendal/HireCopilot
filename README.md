@@ -3,87 +3,117 @@
 ### *Wira AI Career Agent™*
 
 > Find smarter. Apply better. Get hired faster.
-> Or, you know, don't. I'm a README, not your mom.
+> Asking for a friend. The friend is the guy who wrote this app. Hi.
 
 ---
 
-Look, I'm going to level with you, because that's kind of my whole brand. This is not
-another job board where you upload a PDF into the void and receive seventeen rejection
-emails from companies that never actually read it. That website already exists. It's
-called every other job board. We are not doing that.
+## An Awkward But Necessary Disclosure
 
-HireCopilot is an AI that behaves like a recruiter who actually likes you, works 24/7,
-never takes a coffee break, and — critically — doesn't have a "culture fit" gut feeling
-about your neck tattoo. It reads job descriptions so you don't have to skim 40 of them
-at 2am while questioning your life choices. It writes cover letters that don't start
-with "I am writing to express my interest." (If you've ever written that sentence, we
-need to talk. Also, hi. Welcome. You're in the right place now.)
+So here's the thing. You know how most portfolio projects are like "look what I built,
+I am extremely employed and just doing this for fun"? This is not that. This is a man
+(**[sepatusendal](https://github.com/sepatusendal)**, real name behind the keyboard,
+allegedly a software engineer) who does not currently have a job, and instead of doing
+a normal amount of job hunting, decided the correct move was to **build an entire AI
+Career Operating System from scratch** to do the job hunting *for* him. While he sits
+there. Watching it work. Occasionally saying "good bot."
 
-Quality over quantity. Ten laser-targeted applications beat three hundred spray-and-pray
-ones, the same way one well-aimed sarcastic comment beats a whole PowerPoint of them.
-Every score the AI gives you comes with a reason. No black boxes. No vibes-based
-rejection. If the AI thinks you're a bad fit, it will *tell you why*, like a friend who's
-too honest for their own good but you keep them around anyway.
+Is this the most efficient path to employment? Unclear! Nobody has checked! But you
+have to respect the commitment to the bit. Most people update their LinkedIn banner.
+This guy shipped five phases of a Next.js app with a working AI pipeline, a kanban
+board, and a resume generator with a strict "do not lie about my work history" clause,
+because apparently even the AI needed boundaries.
+
+If you are a recruiter reading this: yes, this is a flex. Yes, it's also a cry for
+help. Both things are true. Hire him. He clearly knows how to finish something.
 
 ---
 
-## What's actually in here (Phase 0: The Foundation Arc)
+## What This Actually Does (for the 3 people who scrolled past the confession)
 
-This is the origin story. No superpowers yet, just the lab equipment.
+HireCopilot behaves like a recruiter who works 24/7, never ghosts you, and — unlike a
+human recruiter — will actually explain *why* it thinks you're a bad fit instead of
+just leaving you on read for six business days. It finds jobs, scores them honestly
+(sometimes brutally — one job got a 5/100 and the AI's reasoning was essentially "no"),
+writes cover letters that don't open with "I am writing to express my interest," and
+generates resumes that are contractually forbidden from inventing achievements you
+never had. Radical concept, we know.
 
-- ✅ Auth that works (email/password + GitHub OAuth, because apparently typing a
-  password twice is asking too much of humanity in 2026)
-- ✅ A dashboard that doesn't look like it was designed by a Fortune 500 HR department
-  in 2011 — bold borders, hard shadows, dark mode by default because your eyes deserve
-  better at midnight
-- ✅ A real, actual, talks-to-a-real-database Application Pipeline widget
-- ✅ Nine other pages standing around going "we're not ready yet, but we look great
-  doing nothing" (placeholders, but *tasteful* ones)
-- ⏳ The actual AI agents (Discovery, Match, Resume, Cover Letter, Interview Coach, etc.)
-  — coming in later phases, like sequels, except hopefully better than the third one
+Quality over quantity. Ten laser-targeted applications beat three hundred
+spray-and-pray ones. The guy building this needs *one* yes, not three hundred maybes.
 
-## The stack (a.k.a. what we told the investors)
+---
 
-Next.js 16 · React 19 · TypeScript (strict mode, no `any`, we have standards) ·
-Tailwind v4 · Better Auth · Prisma · PostgreSQL via Supabase · pnpm because we like
-our disk space the way we like our rejection rate: low.
+## Current Status: It's Alive (uncomfortably capable, actually)
 
-## Getting started (yes, you, right now)
+This started as Phase 0 ("does it even boot") and has since developed opinions.
+
+- ✅ **Auth** — email/password + GitHub OAuth, so at least *logging in* is one thing
+  in his life that works on the first try
+- ✅ **Neubrutalist dashboard** — bold borders, hard shadows, light mode by default,
+  because staring at a job search dashboard should not also feel like a punishment
+- ✅ **Discover + Match Agent** — pulls real jobs, scores them against his actual
+  profile using an AI that will not sugarcoat it. It has said "extremely unlikely to
+  be considered for an interview" to his face. The AI has more self-esteem about his
+  chances than he does, and it still said that.
+- ✅ **Application Tracker** — a real kanban pipeline (New → Interested → ... → Offer
+  → Rejected), because tracking rejections in a spreadsheet felt too honest
+- ✅ **Cover Letter Agent** — generates letters unique per company, banned from ever
+  writing "I am writing to express my interest," on principle
+- ✅ **Resume Agent** — tailors wording per job while being *structurally incapable*
+  of inventing experience. Yes, it once tried to put "Pottery" on a Senior React
+  Engineer resume because that's a real hobby of his. We fixed that. Barely.
+- ✅ **Multi-provider AI with automatic fallback** — Claude, Gemini, OpenRouter,
+  DeepSeek, OpenAI. If one runs out of free quota mid-job-search (this has happened,
+  repeatedly, live, during testing), it silently switches to the next one instead of
+  leaving him hanging. More reliable than most callback promises he's gotten.
+- ⏳ **Interview Copilot, Portfolio Agent, Analytics, actual PDF export** — coming
+  later, presumably before he runs out of savings, no pressure
+
+## The Stack (a.k.a. what he'd tell you at a networking event, if he went to those)
+
+Next.js 16 · React 19 · TypeScript (strict, no `any` — the one part of his life with
+zero tolerance for uncertainty) · Tailwind v4 · Better Auth · Prisma · PostgreSQL via
+Supabase · pnpm · an AI layer that talks to five different providers because
+commitment issues, apparently, extend to model selection too.
+
+## Getting Started (if you, a person with more free time than him, want to run this)
 
 ```bash
 pnpm install
-cp .env.example .env.local   # go fill this in, I'm not psychic
+cp .env.example .env.local   # fill this in — the app can't read your mind, only your resume
 pnpm exec prisma migrate dev
 pnpm dev
 ```
 
-Then open `localhost:3000` and pretend to be impressed. You will be, actually. It's fine.
+Open `localhost:3000`. Watch an AI agent work harder on his career than several past
+managers did.
 
-## Project structure, explained like you have somewhere to be
+## Project Structure (for the recruiters who ask about architecture in interviews)
 
 ```
 src/
-  app/            # routes only. thin. no logic. like a good hallway.
-  features/       # where the actual business logic lives, organized by domain
+  app/            # routes only. thin. no logic. like his patience for cover letters.
+  features/       # match, discovery, applications, resume, cover-letter — the actual work
+  lib/ai/         # multi-provider AI layer with automatic fallback (gemini → openrouter → deepseek)
   components/
-    ui/           # buttons, inputs, cards — the boring reliable friends
-    shared/       # Sidebar, StateWrapper, PageHeader — the ones who show up everywhere
-  lib/            # prisma client, auth config, the glue nobody notices until it's gone
+    ui/           # buttons, inputs, cards — reliable, unlike the job market
+    shared/       # Sidebar, StateWrapper, PageHeader — load-bearing furniture
 prisma/
-  schema.prisma   # User, Profile, Job, Application, Resume, and their little friends
+  schema.prisma   # User, Profile, Job, Application, Resume, CoverLetter, and friends
 ```
 
-Every page that fetches data goes through `StateWrapper`
+Every data view goes through `StateWrapper`
 ([src/components/shared/StateWrapper.tsx](./src/components/shared/StateWrapper.tsx))
-so you always get a Loading, Empty, Error, or Success state — never just a blank page
-staring back at you like it forgot why it walked into the room.
+for Loading / Empty / Error / Success states — because even the UI is legally required
+to tell you when something's not working, unlike certain hiring pipelines.
 
-## A message from management (me)
+## A Message From Management (still him, there is no management)
 
-Built by [sepatusendal](https://github.com/sepatusendal), who apparently wants a career
-agent so good it makes actual recruiters nervous. Bold goal. Respect it.
+Built by [sepatusendal](https://github.com/sepatusendal), who is, as of this writing,
+very available for opportunities. The AI in this repo has scored real jobs, written
+real cover letters, and generated a real resume, all without a single job offer
+materializing yet for the human who built it. There's a joke in there somewhere about
+irony. He's too tired to write it. That's what the AI is for.
 
-This README will get less unhinged as the product gets more real. Or it won't. Nobody's
-stopping me. That's the beauty of open source and having no editor.
-
-**Now go get hired. I believe in you. Mostly because I have to — I'm the README.**
+**If you made it this far: he's hireable, this repo is proof, and yes, he sees the
+irony of needing an AI recruiter more than the AI recruiter needs him.**
