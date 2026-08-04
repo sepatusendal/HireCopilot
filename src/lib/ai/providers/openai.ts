@@ -2,14 +2,17 @@ import OpenAI from "openai";
 import {
   matchResultSchema,
   resumeResultSchema,
+  interviewPrepResultSchema,
   type AIProvider,
   type CoverLetterInput,
+  type InterviewPrepInput,
+  type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
 let client: OpenAI | undefined;
 function getClient(): OpenAI {
@@ -115,4 +118,61 @@ async function generateResume(input: ResumeInput): Promise<ResumeResult> {
   return resumeResultSchema.parse(JSON.parse(content));
 }
 
-export const openaiProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };
+const interviewPrepJsonSchema = {
+  type: "object",
+  properties: {
+    companySummary: { type: "string" },
+    productOverview: { type: "string" },
+    companyCulture: { type: "string" },
+    salaryInsight: { type: "string" },
+    starStories: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          situation: { type: "string" },
+          task: { type: "string" },
+          action: { type: "string" },
+          result: { type: "string" },
+        },
+        required: ["title", "situation", "task", "action", "result"],
+        additionalProperties: false,
+      },
+    },
+    behavioralQuestions: { type: "array", items: { type: "string" }, maxItems: 6 },
+    technicalQuestions: { type: "array", items: { type: "string" }, maxItems: 6 },
+    questionsToAsk: { type: "array", items: { type: "string" }, maxItems: 6 },
+  },
+  required: [
+    "companySummary",
+    "productOverview",
+    "companyCulture",
+    "salaryInsight",
+    "starStories",
+    "behavioralQuestions",
+    "technicalQuestions",
+    "questionsToAsk",
+  ],
+  additionalProperties: false,
+};
+
+async function generateInterviewPrep(input: InterviewPrepInput): Promise<InterviewPrepResult> {
+  const response = await getClient().chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: buildInterviewPrepPrompt(input) }],
+    response_format: {
+      type: "json_schema",
+      json_schema: { name: "provide_interview_prep", schema: interviewPrepJsonSchema, strict: true },
+    },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("OpenAI did not return interview prep content.");
+  }
+
+  return interviewPrepResultSchema.parse(JSON.parse(content));
+}
+
+export const openaiProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };

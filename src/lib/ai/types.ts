@@ -51,8 +51,32 @@ export const resumeResultSchema = z.object({
 
 export type ResumeResult = z.infer<typeof resumeResultSchema>;
 
+export type InterviewPrepInput = JobProfileInput;
+
+export const interviewPrepResultSchema = z.object({
+  companySummary: z.string(),
+  productOverview: z.string(),
+  companyCulture: z.string(),
+  salaryInsight: z.string(),
+  starStories: z.array(
+    z.object({
+      title: z.string(),
+      situation: z.string(),
+      task: z.string(),
+      action: z.string(),
+      result: z.string(),
+    })
+  ),
+  behavioralQuestions: z.array(z.string()).max(6),
+  technicalQuestions: z.array(z.string()).max(6),
+  questionsToAsk: z.array(z.string()).max(6),
+});
+
+export type InterviewPrepResult = z.infer<typeof interviewPrepResultSchema>;
+
 export interface AIProvider {
   matchJob(input: MatchInput): Promise<MatchResult>;
   generateCoverLetter(input: CoverLetterInput): Promise<string>;
   generateResume(input: ResumeInput): Promise<ResumeResult>;
+  generateInterviewPrep(input: InterviewPrepInput): Promise<InterviewPrepResult>;
 }

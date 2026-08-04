@@ -24,9 +24,10 @@ model User {
 
   profile      Profile?
   applications Application[]
-  resumes      Resume[]
-  coverLetters CoverLetter[]
-  activities   Activity[]
+  resumes        Resume[]
+  coverLetters   CoverLetter[]
+  interviewPreps InterviewPrep[]
+  activities     Activity[]
 
   @@map("user")
 }
@@ -211,6 +212,8 @@ model Application {
   resume     Resume?           @relation(fields: [resumeId], references: [id])
   coverLetterId String?
   coverLetter   CoverLetter?   @relation(fields: [coverLetterId], references: [id])
+  interviewPrepId String?
+  interviewPrep   InterviewPrep? @relation(fields: [interviewPrepId], references: [id])
   appliedAt  DateTime?
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
@@ -260,6 +263,20 @@ model CoverLetter {
   applications Application[]
 
   @@map("cover_letter")
+}
+
+model InterviewPrep {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  content   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+
+  @@map("interview_prep")
 }
 
 // ─── AI activity log ─────────────────────────────────────────────────────

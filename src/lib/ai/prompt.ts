@@ -1,4 +1,4 @@
-import type { CoverLetterInput, JobProfileInput, MatchInput, ResumeInput } from "@/lib/ai/types";
+import type { CoverLetterInput, InterviewPrepInput, JobProfileInput, MatchInput, ResumeInput } from "@/lib/ai/types";
 
 function formatJobAndProfile(input: JobProfileInput): string {
   const { job, profile } = input;
@@ -60,4 +60,26 @@ ${formatJobAndProfile(input)}
 
 Numbered experiences to rewrite (respond with exactly this many entries, in this order):
 ${numberedExperiences || "(none listed — return an empty experiences array)"}`;
+}
+
+export function buildInterviewPrepPrompt(input: InterviewPrepInput): string {
+  const { profile } = input;
+  const numberedExperiences = profile.experiences
+    .map((e, i) => `${i}. ${e.title} at ${e.company}${e.description ? `: ${e.description}` : ""}`)
+    .join("\n");
+
+  return `You are an expert interview coach helping a candidate prepare for an interview at a specific company. You are grounded ONLY in the job description and the candidate's real profile below.
+
+Hard rules:
+- Do NOT generate "recent news" or anything claiming to be current/breaking information about the company — you have no real-time access and would be guessing. Do not include a news or competitors section at all.
+- companySummary/productOverview/companyCulture should be reasonable, clearly general-knowledge-level context inferred from the company name and job description — do not state specific recent facts (funding rounds, headcount numbers, executive names) unless they appear in the job description itself.
+- The "starStories" array MUST have exactly one entry per numbered experience below, IN THE SAME ORDER (index 0 first). Build each as a STAR story (Situation, Task, Action, Result) using ONLY what's implied by that experience's description — never invent metrics or outcomes not grounded there.
+- behavioralQuestions and technicalQuestions should be realistic questions tailored to this specific job description.
+- questionsToAsk should be smart questions this candidate could ask the interviewer, tailored to the role/company.
+- salaryInsight: if the job posting has a salary range, reference it; otherwise say it's not listed and give general framing advice, don't invent a number.
+
+${formatJobAndProfile(input)}
+
+Numbered experiences for STAR stories (respond with exactly this many entries, in this order):
+${numberedExperiences || "(none listed — return an empty starStories array)"}`;
 }

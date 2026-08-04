@@ -2,14 +2,17 @@ import OpenAI from "openai";
 import {
   matchResultSchema,
   resumeResultSchema,
+  interviewPrepResultSchema,
   type AIProvider,
   type CoverLetterInput,
+  type InterviewPrepInput,
+  type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
 // OpenRouter's free-tier model lineup changes over time (models get deprecated
 // or rate-limited upstream) — if this one starts failing, check
@@ -75,4 +78,22 @@ async function generateResume(input: ResumeInput): Promise<ResumeResult> {
   return resumeResultSchema.parse(JSON.parse(content));
 }
 
-export const openrouterProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };
+const INTERVIEW_PREP_JSON_INSTRUCTION =
+  '\n\nRespond with ONLY a raw JSON object (no markdown fences) with exactly these keys: companySummary (string), productOverview (string), companyCulture (string), salaryInsight (string), starStories (array of objects with keys title, situation, task, action, result — one entry per numbered experience, same order), behavioralQuestions (array of up to 6 strings), technicalQuestions (array of up to 6 strings), questionsToAsk (array of up to 6 strings). Do not include any recent news or competitors section.';
+
+async function generateInterviewPrep(input: InterviewPrepInput): Promise<InterviewPrepResult> {
+  const response = await getClient().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: "user", content: buildInterviewPrepPrompt(input) + INTERVIEW_PREP_JSON_INSTRUCTION }],
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("OpenRouter did not return interview prep content.");
+  }
+
+  return interviewPrepResultSchema.parse(JSON.parse(content));
+}
+
+export const openrouterProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };

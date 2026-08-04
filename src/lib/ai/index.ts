@@ -3,7 +3,7 @@ import { geminiProvider } from "@/lib/ai/providers/gemini";
 import { openaiProvider } from "@/lib/ai/providers/openai";
 import { openrouterProvider } from "@/lib/ai/providers/openrouter";
 import { deepseekProvider } from "@/lib/ai/providers/deepseek";
-import type { AIProvider, CoverLetterInput, MatchInput, ResumeInput } from "@/lib/ai/types";
+import type { AIProvider, CoverLetterInput, InterviewPrepInput, MatchInput, ResumeInput } from "@/lib/ai/types";
 
 const providers = {
   claude: claudeProvider,
@@ -57,5 +57,15 @@ export const generateCoverLetter = (input: CoverLetterInput) =>
   withFallback((provider, i) => provider.generateCoverLetter(i), input);
 export const generateResume = (input: ResumeInput) =>
   withFallback((provider, i) => provider.generateResume(i), input);
+export const generateInterviewPrep = (input: InterviewPrepInput) =>
+  withFallback((provider, i) => provider.generateInterviewPrep(i), input);
 
-export type { CoverLetterInput, MatchInput, MatchResult, ResumeInput, ResumeResult } from "@/lib/ai/types";
+export type {
+  CoverLetterInput,
+  InterviewPrepInput,
+  InterviewPrepResult,
+  MatchInput,
+  MatchResult,
+  ResumeInput,
+  ResumeResult,
+} from "@/lib/ai/types";

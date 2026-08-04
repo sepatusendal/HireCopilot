@@ -2,14 +2,17 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   matchResultSchema,
   resumeResultSchema,
+  interviewPrepResultSchema,
   type AIProvider,
   type CoverLetterInput,
+  type InterviewPrepInput,
+  type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
 
 let client: Anthropic | undefined;
 function getClient(): Anthropic {
@@ -123,4 +126,66 @@ async function generateResume(input: ResumeInput): Promise<ResumeResult> {
   return resumeResultSchema.parse(toolUseBlock.input);
 }
 
-export const claudeProvider: AIProvider = { matchJob, generateCoverLetter, generateResume };
+const INTERVIEW_PREP_TOOL_NAME = "provide_interview_prep";
+
+const interviewPrepTool: Anthropic.Tool = {
+  name: INTERVIEW_PREP_TOOL_NAME,
+  description: "Provide interview prep content grounded strictly in the job description and the candidate's real profile data. Never include recent news or claims about current events.",
+  input_schema: {
+    type: "object",
+    properties: {
+      companySummary: { type: "string" },
+      productOverview: { type: "string" },
+      companyCulture: { type: "string" },
+      salaryInsight: { type: "string" },
+      starStories: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            situation: { type: "string" },
+            task: { type: "string" },
+            action: { type: "string" },
+            result: { type: "string" },
+          },
+          required: ["title", "situation", "task", "action", "result"],
+        },
+      },
+      behavioralQuestions: { type: "array", items: { type: "string" }, maxItems: 6 },
+      technicalQuestions: { type: "array", items: { type: "string" }, maxItems: 6 },
+      questionsToAsk: { type: "array", items: { type: "string" }, maxItems: 6 },
+    },
+    required: [
+      "companySummary",
+      "productOverview",
+      "companyCulture",
+      "salaryInsight",
+      "starStories",
+      "behavioralQuestions",
+      "technicalQuestions",
+      "questionsToAsk",
+    ],
+  },
+};
+
+async function generateInterviewPrep(input: InterviewPrepInput): Promise<InterviewPrepResult> {
+  const response = await getClient().messages.create({
+    model: "claude-sonnet-5",
+    max_tokens: 2048,
+    tools: [interviewPrepTool],
+    tool_choice: { type: "tool", name: INTERVIEW_PREP_TOOL_NAME },
+    messages: [
+      { role: "user", content: `${buildInterviewPrepPrompt(input)}\n\nCall the ${INTERVIEW_PREP_TOOL_NAME} tool with your result.` },
+    ],
+  });
+
+  const toolUseBlock = response.content.find((block) => block.type === "tool_use");
+  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
+    throw new Error("Claude did not return interview prep content.");
+  }
+
+  return interviewPrepResultSchema.parse(toolUseBlock.input);
+}
+
+export const claudeProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };

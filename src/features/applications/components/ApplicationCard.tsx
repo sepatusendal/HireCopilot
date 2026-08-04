@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { MapPin, Mail, FileText } from "lucide-react";
+import { MapPin, Mail, FileText, MessageSquare } from "lucide-react";
 import type { Application, ApplicationStatus, Company, Job } from "@prisma/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn, scoreAccent } from "@/lib/utils";
@@ -10,8 +10,11 @@ import { updateApplicationStatusAction } from "@/features/applications/actions";
 import { ALL_STATUSES, STATUS_LABELS } from "@/features/applications/constants";
 import { generateCoverLetterAction } from "@/features/cover-letter/actions";
 import { generateResumeAction } from "@/features/resume/actions";
+import { generateInterviewPrepAction } from "@/features/interview/actions";
 
 export type ApplicationWithJob = Application & { job: Job & { company: Company } };
+
+const INTERVIEW_PREP_STATUSES: ApplicationStatus[] = ["INTERVIEW", "TECHNICAL_TEST", "OFFER"];
 
 export function ApplicationCard({ application }: { application: ApplicationWithJob }) {
   const [isPending, startTransition] = useTransition();
@@ -19,8 +22,11 @@ export function ApplicationCard({ application }: { application: ApplicationWithJ
   const [letterError, setLetterError] = useState<string | null>(null);
   const [isGeneratingResume, startGeneratingResume] = useTransition();
   const [resumeError, setResumeError] = useState<string | null>(null);
+  const [isGeneratingPrep, startGeneratingPrep] = useTransition();
+  const [prepError, setPrepError] = useState<string | null>(null);
   const score = application.matchScore ?? 0;
   const accent = scoreAccent(score);
+  const showInterviewPrep = INTERVIEW_PREP_STATUSES.includes(application.status);
 
   return (
     <Card className={cn("transition-opacity", isPending && "opacity-60")}>
@@ -132,6 +138,42 @@ export function ApplicationCard({ application }: { application: ApplicationWithJ
           )}
         </div>
         {resumeError && <p className="mt-2 text-xs font-bold text-rejection">{resumeError}</p>}
+
+        {showInterviewPrep && (
+          <>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                disabled={isGeneratingPrep}
+                onClick={() =>
+                  startGeneratingPrep(async () => {
+                    setPrepError(null);
+                    const result = await generateInterviewPrepAction(application.id);
+                    if (!result.success) {
+                      setPrepError(result.message ?? "Something went wrong.");
+                    }
+                  })
+                }
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-card px-2.5 py-1.5 text-xs font-bold shadow-brutal-sm transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <MessageSquare className="size-3.5" />
+                {isGeneratingPrep
+                  ? "Prepping…"
+                  : application.interviewPrepId
+                    ? "Regenerate interview prep"
+                    : "Generate interview prep"}
+              </button>
+              {application.interviewPrepId && !isGeneratingPrep && (
+                <Link
+                  href="/interview"
+                  className="rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-ai px-2.5 py-1.5 text-xs font-bold text-ai-foreground shadow-brutal-sm transition-transform hover:-translate-y-0.5"
+                >
+                  View
+                </Link>
+              )}
+            </div>
+            {prepError && <p className="mt-2 text-xs font-bold text-rejection">{prepError}</p>}
+          </>
+        )}
       </CardContent>
     </Card>
   );
