@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateCoverLetterForApplication } from "@/features/cover-letter/agent";
+import { coverLetterHtmlTemplate } from "@/features/cover-letter/pdf-template";
+import { renderHtmlToPdf } from "@/lib/pdf";
+import { uploadDocument } from "@/lib/storage";
 
 export interface GenerateCoverLetterResult {
   success: boolean;
@@ -69,4 +72,37 @@ export async function generateCoverLetterAction(applicationId: string): Promise<
   revalidatePath("/cover-letter");
 
   return { success: true };
+}
+
+export interface ExportCoverLetterPdfResult {
+  success: boolean;
+  message?: string;
+  fileUrl?: string;
+}
+
+export async function exportCoverLetterPdfAction(coverLetterId: string): Promise<ExportCoverLetterPdfResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return { success: false, message: "You need to be signed in." };
+  }
+
+  const coverLetter = await prisma.coverLetter.findFirst({ where: { id: coverLetterId, userId: session.user.id } });
+  if (!coverLetter) {
+    return { success: false, message: "Cover letter not found." };
+  }
+
+  let fileUrl: string;
+  try {
+    const html = coverLetterHtmlTemplate(coverLetter.label, coverLetter.content);
+    const pdf = await renderHtmlToPdf(html);
+    fileUrl = await uploadDocument(`cover-letters/${coverLetter.id}.pdf`, pdf, "application/pdf");
+  } catch (error) {
+    console.error(`Failed to export cover letter ${coverLetterId} to PDF:`, error);
+    return { success: false, message: "PDF export failed. Check that Supabase Storage and Chrome are configured." };
+  }
+
+  await prisma.coverLetter.update({ where: { id: coverLetterId }, data: { fileUrl } });
+  revalidatePath("/cover-letter");
+
+  return { success: true, fileUrl };
 }

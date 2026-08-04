@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Resume } from "@prisma/client";
+import type { AtsReport, Resume } from "@prisma/client";
 import { resumeContentSchema } from "@/features/resume/schema";
+import { AtsReportPanel } from "@/features/ats/components/AtsReportPanel";
+import { DownloadPdfButton } from "@/components/shared/DownloadPdfButton";
+import { exportResumePdfAction } from "@/features/resume/actions";
 
-export function ResumeCard({ resume }: { resume: Resume }) {
+export function ResumeCard({ resume, atsReport }: { resume: Resume; atsReport?: AtsReport | null }) {
   const parsed = resumeContentSchema.safeParse(resume.content);
 
   return (
@@ -55,6 +58,8 @@ export function ResumeCard({ resume }: { resume: Resume }) {
             )}
           </>
         )}
+        {atsReport && <AtsReportPanel atsReport={atsReport} />}
+        <DownloadPdfButton id={resume.id} fileUrl={resume.fileUrl} exportAction={exportResumePdfAction} />
       </CardContent>
     </Card>
   );

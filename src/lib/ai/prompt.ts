@@ -1,11 +1,19 @@
-import type { CoverLetterInput, InterviewPrepInput, JobProfileInput, MatchInput, ResumeInput } from "@/lib/ai/types";
+import type {
+  CoverLetterInput,
+  InterviewPrepInput,
+  JobProfileInput,
+  MatchInput,
+  PortfolioInput,
+  QuestionnaireInput,
+  ResumeInput,
+} from "@/lib/ai/types";
 
 function formatJobAndProfile(input: JobProfileInput): string {
   const { job, profile } = input;
   return `## Job
 Title: ${job.title}
 Company: ${job.companyName}
-Location: ${job.location ?? "Not specified"}${job.isRemote ? " (Remote)" : ""}
+Location: ${job.location ?? "Not specified"} — work mode: ${job.workMode}${job.isRemote ? " (Remote)" : ""}
 Salary range: ${job.salaryMin ?? "?"} - ${job.salaryMax ?? "?"}
 Description:
 ${job.description}
@@ -15,6 +23,8 @@ Headline: ${profile.headline ?? "Not set"}
 Summary: ${profile.summary ?? "Not set"}
 Target roles: ${profile.targetRoles.join(", ") || "Not set"}
 Experience level: ${profile.experienceLevel ?? "Not set"}
+Location: ${profile.location ?? "Not set"}
+Preferred work mode: ${profile.preferredWorkMode}
 Skills: ${profile.skills.join(", ") || "None listed"}
 Experience:
 ${profile.experiences.map((e) => `- ${e.title} at ${e.company}${e.description ? `: ${e.description}` : ""}`).join("\n") || "None listed"}`;
@@ -24,6 +34,9 @@ export function buildMatchPrompt(input: MatchInput): string {
   return `You are an expert technical recruiter evaluating how well a candidate fits a job. Be honest and specific — never inflate scores to be nice. Every claim must be traceable to something in the job description or the candidate profile below.
 
 ${formatJobAndProfile(input)}
+
+Hard rules:
+- Factor location/work-mode fit explicitly: if the candidate's preferred work mode is ONSITE or HYBRID and the job is in a different city/country with no remote option, or if the candidate wants REMOTE and the job is strictly onsite, call that out as a weakness and reflect it in the score — don't ignore geography. If the candidate's preferred work mode is ANY or the job is REMOTE, location mismatch matters much less.
 
 Return a matchScore (0-100), atsCompatibility (0-100), interviewProbability (0-100), up to 6 strengths, up to 6 weaknesses, up to 6 missingSkills, a salaryCompatibility note, and a plain-English reasoning paragraph explaining the score.`;
 }
@@ -60,6 +73,47 @@ ${formatJobAndProfile(input)}
 
 Numbered experiences to rewrite (respond with exactly this many entries, in this order):
 ${numberedExperiences || "(none listed — return an empty experiences array)"}`;
+}
+
+export function buildPortfolioPrompt(input: PortfolioInput): string {
+  const numberedProjects = input.projects
+    .map(
+      (p, i) =>
+        `${i}. [${p.category}] ${p.title}${p.tags.length ? ` (tags: ${p.tags.join(", ")})` : ""}${p.description ? `: ${p.description}` : ""}`
+    )
+    .join("\n");
+
+  return `You are a portfolio curator deciding which of a candidate's projects to lead with for a specific job. You do NOT rewrite or invent projects — you only decide the display order.
+
+${formatJobAndProfile(input)}
+
+Numbered projects (index 0 first):
+${numberedProjects || "(none listed)"}
+
+Hard rules:
+- "order" MUST be a permutation of ALL indices 0 to ${Math.max(input.projects.length - 1, 0)} — every index exactly once, most relevant to this job first.
+- Do not invent, merge, or drop projects.
+- "reasoning" is a short plain-English explanation of why this order fits this specific role (e.g. "CRM role → led with CRM Dashboard, then Marketing Analytics").`;
+}
+
+export function buildQuestionnairePrompt(input: QuestionnaireInput): string {
+  const numberedQuestions = input.questions.map((q, i) => `${i}. [${q.category}] ${q.question}`).join("\n");
+  const knownAnswers = input.knownAnswers.map((a) => `- "${a.question}" → "${a.answer}"`).join("\n");
+
+  return `You are helping a candidate answer standard job application questions, strictly grounded in their real profile. Never invent facts (salary numbers, years of experience, visa status, availability dates) that aren't derivable from the data below.
+
+${formatJobAndProfile(input)}
+
+Previously given answers to reuse if a question is the same or a close variant (prefer reusing these over regenerating):
+${knownAnswers || "(none saved yet)"}
+
+Numbered questions to answer (respond with exactly one answer per question, in the same order):
+${numberedQuestions || "(none)"}
+
+Hard rules:
+- "answers" MUST have exactly one entry per numbered question above, in the same order.
+- If you have enough grounded information to answer confidently, set needsUserInput to false and write the answer.
+- If the question asks for something not derivable from the profile/job data or known answers (e.g. a specific expected salary number, notice period, visa sponsorship status not stated anywhere), do NOT guess a number or fact — write a short placeholder like "Needs your input" as the answer and set needsUserInput to true.`;
 }
 
 export function buildInterviewPrepPrompt(input: InterviewPrepInput): string {

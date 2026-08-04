@@ -3,20 +3,38 @@ import {
   matchResultSchema,
   resumeResultSchema,
   interviewPrepResultSchema,
+  portfolioResultSchema,
+  questionnaireResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type InterviewPrepInput,
   type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
+  type PortfolioInput,
+  type PortfolioResult,
+  type QuestionnaireInput,
+  type QuestionnaireResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import {
+  buildCoverLetterPrompt,
+  buildInterviewPrepPrompt,
+  buildMatchPrompt,
+  buildPortfolioPrompt,
+  buildQuestionnairePrompt,
+  buildResumePrompt,
+} from "@/lib/ai/prompt";
 
 let client: Anthropic | undefined;
+// Keeps the whole fallback chain within Vercel Hobby's 60s function budget —
+// a hanging provider used to be able to eat the entire request via the SDK's
+// default multi-minute timeout.
+const REQUEST_TIMEOUT_MS = 12_000;
+
 function getClient(): Anthropic {
-  client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: REQUEST_TIMEOUT_MS });
   return client;
 }
 
@@ -188,4 +206,86 @@ async function generateInterviewPrep(input: InterviewPrepInput): Promise<Intervi
   return interviewPrepResultSchema.parse(toolUseBlock.input);
 }
 
-export const claudeProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };
+const PORTFOLIO_TOOL_NAME = "provide_portfolio_order";
+
+const portfolioTool: Anthropic.Tool = {
+  name: PORTFOLIO_TOOL_NAME,
+  description: "Provide a reordering (permutation of indices) of a candidate's portfolio projects for a specific job, plus reasoning.",
+  input_schema: {
+    type: "object",
+    properties: {
+      order: { type: "array", items: { type: "integer" } },
+      reasoning: { type: "string" },
+    },
+    required: ["order", "reasoning"],
+  },
+};
+
+async function reorderPortfolio(input: PortfolioInput): Promise<PortfolioResult> {
+  const response = await getClient().messages.create({
+    model: "claude-sonnet-5",
+    max_tokens: 1024,
+    tools: [portfolioTool],
+    tool_choice: { type: "tool", name: PORTFOLIO_TOOL_NAME },
+    messages: [{ role: "user", content: `${buildPortfolioPrompt(input)}\n\nCall the ${PORTFOLIO_TOOL_NAME} tool with your result.` }],
+  });
+
+  const toolUseBlock = response.content.find((block) => block.type === "tool_use");
+  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
+    throw new Error("Claude did not return a portfolio order.");
+  }
+
+  return portfolioResultSchema.parse(toolUseBlock.input);
+}
+
+const QUESTIONNAIRE_TOOL_NAME = "provide_questionnaire_answers";
+
+const questionnaireTool: Anthropic.Tool = {
+  name: QUESTIONNAIRE_TOOL_NAME,
+  description: "Provide grounded answers to application questionnaire questions, flagging any that need user input.",
+  input_schema: {
+    type: "object",
+    properties: {
+      answers: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            answer: { type: "string" },
+            needsUserInput: { type: "boolean" },
+          },
+          required: ["answer", "needsUserInput"],
+        },
+      },
+    },
+    required: ["answers"],
+  },
+};
+
+async function answerQuestionnaire(input: QuestionnaireInput): Promise<QuestionnaireResult> {
+  const response = await getClient().messages.create({
+    model: "claude-sonnet-5",
+    max_tokens: 1536,
+    tools: [questionnaireTool],
+    tool_choice: { type: "tool", name: QUESTIONNAIRE_TOOL_NAME },
+    messages: [
+      { role: "user", content: `${buildQuestionnairePrompt(input)}\n\nCall the ${QUESTIONNAIRE_TOOL_NAME} tool with your result.` },
+    ],
+  });
+
+  const toolUseBlock = response.content.find((block) => block.type === "tool_use");
+  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
+    throw new Error("Claude did not return questionnaire answers.");
+  }
+
+  return questionnaireResultSchema.parse(toolUseBlock.input);
+}
+
+export const claudeProvider: AIProvider = {
+  matchJob,
+  generateCoverLetter,
+  generateResume,
+  generateInterviewPrep,
+  reorderPortfolio,
+  answerQuestionnaire,
+};

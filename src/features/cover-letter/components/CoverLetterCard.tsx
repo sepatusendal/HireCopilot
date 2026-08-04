@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CoverLetter } from "@prisma/client";
+import { DownloadPdfButton } from "@/components/shared/DownloadPdfButton";
+import { exportCoverLetterPdfAction } from "@/features/cover-letter/actions";
 
 export function CoverLetterCard({ coverLetter }: { coverLetter: CoverLetter }) {
   return (
@@ -12,6 +14,7 @@ export function CoverLetterCard({ coverLetter }: { coverLetter: CoverLetter }) {
       </CardHeader>
       <CardContent>
         <p className="whitespace-pre-wrap text-sm leading-relaxed">{coverLetter.content}</p>
+        <DownloadPdfButton id={coverLetter.id} fileUrl={coverLetter.fileUrl} exportAction={exportCoverLetterPdfAction} />
       </CardContent>
     </Card>
   );

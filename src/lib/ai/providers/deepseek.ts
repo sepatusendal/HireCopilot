@@ -3,24 +3,40 @@ import {
   matchResultSchema,
   resumeResultSchema,
   interviewPrepResultSchema,
+  portfolioResultSchema,
+  questionnaireResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type InterviewPrepInput,
   type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
+  type PortfolioInput,
+  type PortfolioResult,
+  type QuestionnaireInput,
+  type QuestionnaireResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import {
+  buildCoverLetterPrompt,
+  buildInterviewPrepPrompt,
+  buildMatchPrompt,
+  buildPortfolioPrompt,
+  buildQuestionnairePrompt,
+  buildResumePrompt,
+} from "@/lib/ai/prompt";
 
 const MODEL = "deepseek-chat";
 
 let client: OpenAI | undefined;
+const REQUEST_TIMEOUT_MS = 12_000;
+
 function getClient(): OpenAI {
   client ??= new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY,
     baseURL: "https://api.deepseek.com",
+    timeout: REQUEST_TIMEOUT_MS,
   });
   return client;
 }
@@ -93,4 +109,47 @@ async function generateInterviewPrep(input: InterviewPrepInput): Promise<Intervi
   return interviewPrepResultSchema.parse(JSON.parse(content));
 }
 
-export const deepseekProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };
+const PORTFOLIO_JSON_INSTRUCTION =
+  '\n\nRespond with ONLY a raw JSON object (no markdown fences) with exactly these keys: order (array of integers — a permutation of every project index, most relevant first), reasoning (string).';
+
+async function reorderPortfolio(input: PortfolioInput): Promise<PortfolioResult> {
+  const response = await getClient().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: "user", content: buildPortfolioPrompt(input) + PORTFOLIO_JSON_INSTRUCTION }],
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("DeepSeek did not return a portfolio order.");
+  }
+
+  return portfolioResultSchema.parse(JSON.parse(content));
+}
+
+const QUESTIONNAIRE_JSON_INSTRUCTION =
+  '\n\nRespond with ONLY a raw JSON object (no markdown fences) with exactly these keys: answers (array of objects with keys answer (string) and needsUserInput (boolean) — one entry per numbered question, same order).';
+
+async function answerQuestionnaire(input: QuestionnaireInput): Promise<QuestionnaireResult> {
+  const response = await getClient().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: "user", content: buildQuestionnairePrompt(input) + QUESTIONNAIRE_JSON_INSTRUCTION }],
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("DeepSeek did not return questionnaire answers.");
+  }
+
+  return questionnaireResultSchema.parse(JSON.parse(content));
+}
+
+export const deepseekProvider: AIProvider = {
+  matchJob,
+  generateCoverLetter,
+  generateResume,
+  generateInterviewPrep,
+  reorderPortfolio,
+  answerQuestionnaire,
+};

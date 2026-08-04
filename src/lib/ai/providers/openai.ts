@@ -3,20 +3,35 @@ import {
   matchResultSchema,
   resumeResultSchema,
   interviewPrepResultSchema,
+  portfolioResultSchema,
+  questionnaireResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type InterviewPrepInput,
   type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
+  type PortfolioInput,
+  type PortfolioResult,
+  type QuestionnaireInput,
+  type QuestionnaireResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import {
+  buildCoverLetterPrompt,
+  buildInterviewPrepPrompt,
+  buildMatchPrompt,
+  buildPortfolioPrompt,
+  buildQuestionnairePrompt,
+  buildResumePrompt,
+} from "@/lib/ai/prompt";
 
 let client: OpenAI | undefined;
+const REQUEST_TIMEOUT_MS = 12_000;
+
 function getClient(): OpenAI {
-  client ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  client ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: REQUEST_TIMEOUT_MS });
   return client;
 }
 
@@ -175,4 +190,77 @@ async function generateInterviewPrep(input: InterviewPrepInput): Promise<Intervi
   return interviewPrepResultSchema.parse(JSON.parse(content));
 }
 
-export const openaiProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };
+const portfolioJsonSchema = {
+  type: "object",
+  properties: {
+    order: { type: "array", items: { type: "integer" } },
+    reasoning: { type: "string" },
+  },
+  required: ["order", "reasoning"],
+  additionalProperties: false,
+};
+
+async function reorderPortfolio(input: PortfolioInput): Promise<PortfolioResult> {
+  const response = await getClient().chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: buildPortfolioPrompt(input) }],
+    response_format: {
+      type: "json_schema",
+      json_schema: { name: "provide_portfolio_order", schema: portfolioJsonSchema, strict: true },
+    },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("OpenAI did not return a portfolio order.");
+  }
+
+  return portfolioResultSchema.parse(JSON.parse(content));
+}
+
+const questionnaireJsonSchema = {
+  type: "object",
+  properties: {
+    answers: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          answer: { type: "string" },
+          needsUserInput: { type: "boolean" },
+        },
+        required: ["answer", "needsUserInput"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["answers"],
+  additionalProperties: false,
+};
+
+async function answerQuestionnaire(input: QuestionnaireInput): Promise<QuestionnaireResult> {
+  const response = await getClient().chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: buildQuestionnairePrompt(input) }],
+    response_format: {
+      type: "json_schema",
+      json_schema: { name: "provide_questionnaire_answers", schema: questionnaireJsonSchema, strict: true },
+    },
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) {
+    throw new Error("OpenAI did not return questionnaire answers.");
+  }
+
+  return questionnaireResultSchema.parse(JSON.parse(content));
+}
+
+export const openaiProvider: AIProvider = {
+  matchJob,
+  generateCoverLetter,
+  generateResume,
+  generateInterviewPrep,
+  reorderPortfolio,
+  answerQuestionnaire,
+};

@@ -3,18 +3,31 @@ import {
   matchResultSchema,
   resumeResultSchema,
   interviewPrepResultSchema,
+  portfolioResultSchema,
+  questionnaireResultSchema,
   type AIProvider,
   type CoverLetterInput,
   type InterviewPrepInput,
   type InterviewPrepResult,
   type MatchInput,
   type MatchResult,
+  type PortfolioInput,
+  type PortfolioResult,
+  type QuestionnaireInput,
+  type QuestionnaireResult,
   type ResumeInput,
   type ResumeResult,
 } from "@/lib/ai/types";
-import { buildCoverLetterPrompt, buildInterviewPrepPrompt, buildMatchPrompt, buildResumePrompt } from "@/lib/ai/prompt";
+import {
+  buildCoverLetterPrompt,
+  buildInterviewPrepPrompt,
+  buildMatchPrompt,
+  buildPortfolioPrompt,
+  buildQuestionnairePrompt,
+  buildResumePrompt,
+} from "@/lib/ai/prompt";
 
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 12_000;
 
 let client: GoogleGenAI | undefined;
 function getClient(): GoogleGenAI {
@@ -175,4 +188,68 @@ async function generateInterviewPrep(input: InterviewPrepInput): Promise<Intervi
   return interviewPrepResultSchema.parse(JSON.parse(text));
 }
 
-export const geminiProvider: AIProvider = { matchJob, generateCoverLetter, generateResume, generateInterviewPrep };
+const portfolioResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    order: { type: Type.ARRAY, items: { type: Type.INTEGER } },
+    reasoning: { type: Type.STRING },
+  },
+  required: ["order", "reasoning"],
+};
+
+async function reorderPortfolio(input: PortfolioInput): Promise<PortfolioResult> {
+  const response = await getClient().models.generateContent({
+    model: "gemini-flash-latest",
+    contents: buildPortfolioPrompt(input),
+    config: { responseMimeType: "application/json", responseSchema: portfolioResponseSchema },
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error("Gemini did not return a portfolio order.");
+  }
+
+  return portfolioResultSchema.parse(JSON.parse(text));
+}
+
+const questionnaireResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    answers: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          answer: { type: Type.STRING },
+          needsUserInput: { type: Type.BOOLEAN },
+        },
+        required: ["answer", "needsUserInput"],
+      },
+    },
+  },
+  required: ["answers"],
+};
+
+async function answerQuestionnaire(input: QuestionnaireInput): Promise<QuestionnaireResult> {
+  const response = await getClient().models.generateContent({
+    model: "gemini-flash-latest",
+    contents: buildQuestionnairePrompt(input),
+    config: { responseMimeType: "application/json", responseSchema: questionnaireResponseSchema },
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error("Gemini did not return questionnaire answers.");
+  }
+
+  return questionnaireResultSchema.parse(JSON.parse(text));
+}
+
+export const geminiProvider: AIProvider = {
+  matchJob,
+  generateCoverLetter,
+  generateResume,
+  generateInterviewPrep,
+  reorderPortfolio,
+  answerQuestionnaire,
+};

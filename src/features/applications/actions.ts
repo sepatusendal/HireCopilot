@@ -6,6 +6,10 @@ import type { ApplicationStatus } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { STATUS_LABELS } from "@/features/applications/constants";
+import { buildNotificationCreate } from "@/features/notifications/service";
+import { sendEmail } from "@/lib/email";
+
+const NOTIFY_STATUSES: ApplicationStatus[] = ["INTERVIEW", "OFFER", "REJECTED"];
 
 export async function updateApplicationStatusAction(
   applicationId: string,
@@ -25,19 +29,32 @@ export async function updateApplicationStatusAction(
     return { success: false, message: "Application not found." };
   }
 
+  const message = `Moved "${application.job.title}" to ${STATUS_LABELS[status]}.`;
+
   await prisma.$transaction([
     prisma.application.update({
       where: { id: applicationId },
       data: { status, appliedAt: status === "APPLIED" ? new Date() : application.appliedAt },
     }),
     prisma.activity.create({
-      data: {
-        userId: session.user.id,
-        type: "status_change",
-        message: `Moved "${application.job.title}" to ${STATUS_LABELS[status]}.`,
-      },
+      data: { userId: session.user.id, type: "status_change", message },
     }),
+    ...(NOTIFY_STATUSES.includes(status)
+      ? [
+          buildNotificationCreate({
+            userId: session.user.id,
+            type: "status_change",
+            title: STATUS_LABELS[status],
+            message,
+            link: "/applications",
+          }),
+        ]
+      : []),
   ]);
+
+  if (NOTIFY_STATUSES.includes(status)) {
+    await sendEmail(session.user.email, `HireCopilot: ${STATUS_LABELS[status]}`, `<p>${message}</p>`);
+  }
 
   revalidatePath("/applications");
   revalidatePath("/dashboard");

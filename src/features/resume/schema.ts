@@ -11,3 +11,5 @@ export const resumeContentSchema = z.object({
     })
   ),
 });
+
+export type ResumeContent = z.infer<typeof resumeContentSchema>;

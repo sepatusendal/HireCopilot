@@ -3,7 +3,15 @@ import { geminiProvider } from "@/lib/ai/providers/gemini";
 import { openaiProvider } from "@/lib/ai/providers/openai";
 import { openrouterProvider } from "@/lib/ai/providers/openrouter";
 import { deepseekProvider } from "@/lib/ai/providers/deepseek";
-import type { AIProvider, CoverLetterInput, InterviewPrepInput, MatchInput, ResumeInput } from "@/lib/ai/types";
+import type {
+  AIProvider,
+  CoverLetterInput,
+  InterviewPrepInput,
+  MatchInput,
+  PortfolioInput,
+  QuestionnaireInput,
+  ResumeInput,
+} from "@/lib/ai/types";
 
 const providers = {
   claude: claudeProvider,
@@ -15,10 +23,10 @@ const providers = {
 
 type ProviderName = keyof typeof providers;
 
-// Tried in order when AI_PROVIDER is unset or "auto". Claude/OpenAI are paid,
-// so they're only used when explicitly selected via AI_PROVIDER — never as
-// an automatic fallback that could rack up a bill without the user asking.
-const FALLBACK_ORDER: ProviderName[] = ["gemini", "openrouter", "deepseek"];
+// Tried in order when AI_PROVIDER is unset or "auto". DeepSeek first since
+// it's a paid account with headroom and no tight free-tier quota, then Claude
+// (paid, high quality), then the free tiers (Gemini, OpenAI) as a last resort.
+const FALLBACK_ORDER: ProviderName[] = ["deepseek", "claude", "gemini", "openai"];
 
 function isRetryableError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -59,6 +67,10 @@ export const generateResume = (input: ResumeInput) =>
   withFallback((provider, i) => provider.generateResume(i), input);
 export const generateInterviewPrep = (input: InterviewPrepInput) =>
   withFallback((provider, i) => provider.generateInterviewPrep(i), input);
+export const reorderPortfolio = (input: PortfolioInput) =>
+  withFallback((provider, i) => provider.reorderPortfolio(i), input);
+export const answerQuestionnaire = (input: QuestionnaireInput) =>
+  withFallback((provider, i) => provider.answerQuestionnaire(i), input);
 
 export type {
   CoverLetterInput,
@@ -66,6 +78,11 @@ export type {
   InterviewPrepResult,
   MatchInput,
   MatchResult,
+  PortfolioInput,
+  PortfolioResult,
+  QuestionnaireInput,
+  QuestionnaireResult,
+  QuestionnaireQuestion,
   ResumeInput,
   ResumeResult,
 } from "@/lib/ai/types";
