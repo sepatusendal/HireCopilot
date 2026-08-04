@@ -7,6 +7,25 @@
 
 ---
 
+## Okay But This One's My Favorite, Actually
+
+Look, I have other repos. We don't talk about them. They're fine. They're
+functional. They're the coworker you're polite to in the elevator. This one?
+This one's the ex I still think about, except instead of "getting back
+together" the goal is "getting hired," which, respectfully, is a much
+healthier arc.
+
+HireCopilot is my favorite project not because it's the most technically
+insane thing I've ever shipped (it's up there) but because it has a job.
+A literal job. Its job is to get ME a job. It is, legally speaking, my most
+important employee, and I built it from nothing, and it does not ask for
+PTO. If this repo works the way it's supposed to, you are currently reading
+the origin story of how I got hired. If it doesn't work yet, you're reading
+a very elaborate cover letter that took several weeks and cost me a little
+of my sanity. Either way: iconic. Bold. A little unhinged. Deeply me.
+
+---
+
 ## An Awkward But Necessary Disclosure
 
 So here's the thing. You know how most portfolio projects are like "look what I built,
