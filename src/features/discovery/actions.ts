@@ -7,7 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { fetchArbeitnowJobs } from "@/features/discovery/lib/arbeitnow";
 import { matchJobToProfile } from "@/features/match/agent";
 
-const MAX_NEW_MATCHES_PER_SYNC = 5;
+// Kept low so a full sync stays inside Vercel Hobby's 60s function budget even
+// if a couple of jobs hit the full AI-provider fallback chain. Each match is
+// committed to the DB as soon as it's scored, so if the function does get cut
+// off mid-batch, progress made so far isn't lost — just click "Sync jobs"
+// again to pick up the rest.
+const MAX_NEW_MATCHES_PER_SYNC = 3;
 
 export interface SyncJobsState {
   status: "idle" | "success" | "error";
@@ -53,6 +58,7 @@ export async function syncJobsAction(_prevState: SyncJobsState): Promise<SyncJob
         description: nj.description,
         location: nj.location,
         isRemote: nj.isRemote,
+        workMode: nj.workMode,
         source: "arbeitnow",
         sourceUrl: nj.sourceUrl,
         postedAt: nj.postedAt,

@@ -17,12 +17,21 @@ const EXPERIENCE_LEVELS = [
   { value: "EXECUTIVE", label: "Executive" },
 ] as const;
 
+const WORK_MODES = [
+  { value: "ANY", label: "No preference" },
+  { value: "REMOTE", label: "Remote only" },
+  { value: "HYBRID", label: "Hybrid" },
+  { value: "ONSITE", label: "Onsite" },
+] as const;
+
 interface ProfileFormProps {
   defaultValues: {
     headline: string;
     summary: string;
     targetRoles: string;
     experienceLevel: string;
+    location: string;
+    preferredWorkMode: string;
     skills: string;
   };
 }
@@ -89,6 +98,39 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
             {EXPERIENCE_LEVELS.map((level) => (
               <option key={level.value} value={level.value}>
                 {level.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="location" className="text-sm font-bold">
+            Location
+          </label>
+          <Input
+            id="location"
+            name="location"
+            placeholder="Jakarta, Indonesia"
+            defaultValue={defaultValues.location}
+          />
+          <p className="text-xs text-muted-foreground">Used to judge onsite/hybrid job fit.</p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="preferredWorkMode" className="text-sm font-bold">
+            Preferred work mode
+          </label>
+          <select
+            id="preferredWorkMode"
+            name="preferredWorkMode"
+            defaultValue={defaultValues.preferredWorkMode}
+            className="flex h-11 w-full rounded-[var(--radius-brutal)] border-[var(--border-width)] border-border bg-card px-4 text-sm text-foreground shadow-brutal-sm outline-none transition-shadow focus-visible:shadow-brutal"
+          >
+            {WORK_MODES.map((mode) => (
+              <option key={mode.value} value={mode.value}>
+                {mode.label}
               </option>
             ))}
           </select>

@@ -1,10 +1,13 @@
-import { MapPin, Wifi } from "lucide-react";
+import { MapPin, Wifi, Building2 } from "lucide-react";
 import type { Application, Company, Job } from "@prisma/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn, scoreAccent } from "@/lib/utils";
 import { matchResultSchema } from "@/lib/ai/types";
 
-type ApplicationWithJob = Application & { job: Job & { company: Company } };
+export type ApplicationWithJob = Application & { job: Job & { company: Company } };
+
+const WORK_MODE_LABELS: Record<string, string> = { ONSITE: "Onsite", REMOTE: "Remote", HYBRID: "Hybrid" };
+const WORK_MODE_ICONS: Record<string, typeof Wifi> = { ONSITE: Building2, REMOTE: Wifi, HYBRID: Wifi };
 
 export function JobCard({ application }: { application: ApplicationWithJob }) {
   const parsed = matchResultSchema.safeParse(application.matchDetails);
@@ -25,12 +28,15 @@ export function JobCard({ application }: { application: ApplicationWithJob }) {
                 {application.job.location}
               </span>
             )}
-            {application.job.isRemote && (
-              <span className="flex items-center gap-1">
-                <Wifi className="size-3.5" />
-                Remote
-              </span>
-            )}
+            {(() => {
+              const WorkModeIcon = WORK_MODE_ICONS[application.job.workMode] ?? Building2;
+              return (
+                <span className="flex items-center gap-1">
+                  <WorkModeIcon className="size-3.5" />
+                  {WORK_MODE_LABELS[application.job.workMode] ?? application.job.workMode}
+                </span>
+              );
+            })()}
           </div>
         </div>
         <span

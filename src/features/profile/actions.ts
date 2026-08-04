@@ -7,12 +7,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const experienceLevels = ["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"] as const;
+const workModes = ["ANY", "ONSITE", "REMOTE", "HYBRID"] as const;
 
 const profileSchema = z.object({
   headline: z.string().max(200).optional(),
   summary: z.string().max(2000).optional(),
   targetRoles: z.string().optional(),
   experienceLevel: z.enum(experienceLevels).optional(),
+  location: z.string().max(200).optional(),
+  preferredWorkMode: z.enum(workModes).optional(),
   skills: z.string().optional(),
 });
 
@@ -43,6 +46,8 @@ export async function upsertProfileAction(
     summary: formData.get("summary")?.toString(),
     targetRoles: formData.get("targetRoles")?.toString(),
     experienceLevel: formData.get("experienceLevel")?.toString() || undefined,
+    location: formData.get("location")?.toString(),
+    preferredWorkMode: formData.get("preferredWorkMode")?.toString() || undefined,
     skills: formData.get("skills")?.toString(),
   });
 
@@ -50,7 +55,7 @@ export async function upsertProfileAction(
     return { status: "error", message: "Some fields look off — check the form and try again." };
   }
 
-  const { headline, summary, targetRoles, experienceLevel, skills } = parsed.data;
+  const { headline, summary, targetRoles, experienceLevel, location, preferredWorkMode, skills } = parsed.data;
   const targetRolesList = splitCommaList(targetRoles);
   const skillsList = splitCommaList(skills);
 
@@ -61,6 +66,8 @@ export async function upsertProfileAction(
       summary: summary || null,
       targetRoles: targetRolesList,
       experienceLevel,
+      location: location || null,
+      preferredWorkMode,
     },
     create: {
       userId: session.user.id,
@@ -68,6 +75,8 @@ export async function upsertProfileAction(
       summary: summary || null,
       targetRoles: targetRolesList,
       experienceLevel,
+      location: location || null,
+      preferredWorkMode,
     },
   });
 

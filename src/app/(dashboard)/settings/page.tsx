@@ -24,11 +24,14 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <ProfileForm
+            key={profile?.updatedAt.toISOString() ?? "new"}
             defaultValues={{
               headline: profile?.headline ?? "",
               summary: profile?.summary ?? "",
               targetRoles: profile?.targetRoles.join(", ") ?? "",
               experienceLevel: profile?.experienceLevel ?? "",
+              location: profile?.location ?? "",
+              preferredWorkMode: profile?.preferredWorkMode ?? "ANY",
               skills: profile?.skills.map((s) => s.name).join(", ") ?? "",
             }}
           />
