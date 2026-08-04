@@ -5,9 +5,10 @@ import { ApplicationCard, type ApplicationWithJob } from "@/features/application
 interface PipelineColumnProps {
   status: ApplicationStatus;
   applications: ApplicationWithJob[];
+  projectsById: Record<string, { title: string; category: string }>;
 }
 
-export function PipelineColumn({ status, applications }: PipelineColumnProps) {
+export function PipelineColumn({ status, applications, projectsById }: PipelineColumnProps) {
   return (
     <div className="flex w-72 shrink-0 flex-col gap-3">
       <div className="flex items-center justify-between px-1">
@@ -26,7 +27,7 @@ export function PipelineColumn({ status, applications }: PipelineColumnProps) {
           </div>
         ) : (
           applications.map((application) => (
-            <ApplicationCard key={application.id} application={application} />
+            <ApplicationCard key={application.id} application={application} projectsById={projectsById} />
           ))
         )}
       </div>

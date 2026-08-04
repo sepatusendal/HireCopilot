@@ -12,6 +12,7 @@ export default async function ResumePage() {
 
   const resumes = await prisma.resume.findMany({
     where: { userId: session.user.id },
+    include: { atsReports: { orderBy: { createdAt: "desc" }, take: 1 } },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -31,7 +32,7 @@ export default async function ResumePage() {
       >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {resumes.map((resume) => (
-            <ResumeCard key={resume.id} resume={resume} />
+            <ResumeCard key={resume.id} resume={resume} atsReport={resume.atsReports[0] ?? null} />
           ))}
         </div>
       </StateWrapper>

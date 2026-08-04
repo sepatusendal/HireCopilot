@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StateWrapper } from "@/components/shared/StateWrapper";
 import { SyncJobsButton } from "@/features/discovery/components/SyncJobsButton";
-import { JobCard } from "@/features/discovery/components/JobCard";
+import { DiscoverBoard } from "@/features/discovery/components/DiscoverBoard";
+
+// Sync jobs can call the AI fallback chain multiple times in one request —
+// bump past Vercel's 10s default to the Hobby-plan ceiling of 60s.
+export const maxDuration = 60;
 
 export default async function DiscoverPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -36,11 +40,7 @@ export default async function DiscoverPage() {
           </div>
         }
       >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {applications.map((application) => (
-            <JobCard key={application.id} application={application} />
-          ))}
-        </div>
+        <DiscoverBoard applications={applications} />
       </StateWrapper>
     </div>
   );

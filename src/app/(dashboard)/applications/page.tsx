@@ -9,19 +9,31 @@ import { ALL_STATUSES } from "@/features/applications/constants";
 import { PipelineBoard } from "@/features/applications/components/PipelineBoard";
 import type { ApplicationWithJob } from "@/features/applications/components/ApplicationCard";
 
+// This page's cards trigger Resume/Cover Letter/Interview/Portfolio/Questionnaire/ATS
+// generation and the Apply Agent — all can hit the AI fallback chain or Playwright.
+export const maxDuration = 60;
+
 export default async function ApplicationsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const applications = await prisma.application.findMany({
-    where: { userId: session.user.id },
-    include: { job: { include: { company: true } } },
-    orderBy: { updatedAt: "desc" },
-  });
+  const [applications, profile] = await Promise.all([
+    prisma.application.findMany({
+      where: { userId: session.user.id },
+      include: { job: { include: { company: true } }, atsReport: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.profile.findUnique({
+      where: { userId: session.user.id },
+      include: { projects: true },
+    }),
+  ]);
 
   const applicationsByStatus = Object.fromEntries(
     ALL_STATUSES.map((status) => [status, applications.filter((a) => a.status === status)])
   ) as Record<ApplicationStatus, ApplicationWithJob[]>;
+
+  const projectsById = Object.fromEntries((profile?.projects ?? []).map((p) => [p.id, { title: p.title, category: p.category }]));
 
   return (
     <div>
@@ -37,7 +49,7 @@ export default async function ApplicationsPage() {
           </div>
         }
       >
-        <PipelineBoard applicationsByStatus={applicationsByStatus} />
+        <PipelineBoard applicationsByStatus={applicationsByStatus} projectsById={projectsById} />
       </StateWrapper>
     </div>
   );

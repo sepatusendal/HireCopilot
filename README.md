@@ -85,15 +85,41 @@ This started as Phase 0 ("does it even boot") and has since developed opinions.
   DeepSeek, OpenAI. If one runs out of free quota mid-job-search (this has happened,
   repeatedly, live, during testing), it silently switches to the next one instead of
   leaving him hanging. More reliable than most callback promises he's gotten.
-- ⏳ **Interview Copilot, Portfolio Agent, Analytics, actual PDF export** — coming
-  later, presumably before he runs out of savings, no pressure
+- ✅ **Interview Copilot** — company research, STAR stories built from his real
+  experience (never invented), behavioral/technical prep questions
+- ✅ **Portfolio Agent** — reorders his projects per target role. CRM job? Dashboard
+  goes first. It does not, however, invent new projects. That would be cheating.
+- ✅ **ATS Optimization** — deterministic keyword-overlap scoring against the job
+  description, no AI guessing involved, because a percentage should mean something
+- ✅ **Questionnaire Agent** — answers "why should we hire you" and friends from his
+  real profile, and flat-out refuses to guess a salary number it doesn't have
+- ✅ **Companies tracker, AI Career Insights, Analytics** — watch companies, see
+  skill gaps aggregated from real match history, funnel/trend charts, all computed
+  from data that already exists instead of yet another AI call
+- ✅ **Daily Mission briefing** — a "here's what to do today" summary on the
+  dashboard, because starting a job search with zero direction is how you end up
+  doom-scrolling LinkedIn for three hours instead
+- ✅ **PDF export** — resumes and cover letters render to an actual downloadable PDF
+  now, stored in Supabase, so the "give me a PDF" step no longer means "screenshot
+  it and pray"
+- ✅ **Notification Agent** — in-app + email pings for interviews, offers, and
+  rejections, so he stops manually refreshing the Applications board like it owes
+  him something
+- ✅ **Apply Agent** — Playwright form-filler that submits applications on his
+  behalf, gated behind moving a card to "Ready" first (his explicit approval, not
+  the AI's initiative). Built for generic company career-page forms on purpose —
+  LinkedIn/JobStreet Easy-Apply automation is a good way to get an account flagged,
+  so that adapter isn't wired up yet. **Not yet live-tested end-to-end against a
+  real job site** — do that once, carefully, before trusting it unsupervised.
 
 ## The Stack (a.k.a. what he'd tell you at a networking event, if he went to those)
 
 Next.js 16 · React 19 · TypeScript (strict, no `any` — the one part of his life with
 zero tolerance for uncertainty) · Tailwind v4 · Better Auth · Prisma · PostgreSQL via
 Supabase · pnpm · an AI layer that talks to five different providers because
-commitment issues, apparently, extend to model selection too.
+commitment issues, apparently, extend to model selection too · Puppeteer for PDFs ·
+Playwright for the Apply Agent · Resend for the emails nobody asked for but everyone
+appreciates.
 
 ## Getting Started (if you, a person with more free time than him, want to run this)
 
@@ -101,24 +127,35 @@ commitment issues, apparently, extend to model selection too.
 pnpm install
 cp .env.example .env.local   # fill this in — the app can't read your mind, only your resume
 pnpm exec prisma migrate dev
+pnpm exec playwright install chromium   # only needed for the Apply Agent
 pnpm dev
 ```
 
 Open `localhost:3000`. Watch an AI agent work harder on his career than several past
 managers did.
 
+PDF export uses `@sparticuz/chromium` automatically on Vercel. Locally, set
+`CHROME_EXECUTABLE_PATH` in `.env.local` to a real Chrome install if you want to test
+resume/cover-letter PDF export on your machine.
+
 ## Project Structure (for the recruiters who ask about architecture in interviews)
 
 ```
 src/
   app/            # routes only. thin. no logic. like his patience for cover letters.
-  features/       # match, discovery, applications, resume, cover-letter — the actual work
+  features/       # match, discovery, applications, resume, cover-letter, interview,
+                  # portfolio, ats, questionnaire, companies, insights, analytics,
+                  # mission, notifications, apply — one folder per agent, on purpose
   lib/ai/         # multi-provider AI layer with automatic fallback (gemini → openrouter → deepseek)
+  lib/pdf.ts      # Puppeteer HTML-to-PDF (Vercel-serverless-safe via @sparticuz/chromium)
+  lib/storage.ts  # Supabase Storage uploads (resumes, cover letters, apply proof screenshots)
+  lib/email.ts    # Resend wrapper, no-ops if RESEND_API_KEY isn't set
   components/
     ui/           # buttons, inputs, cards — reliable, unlike the job market
     shared/       # Sidebar, StateWrapper, PageHeader — load-bearing furniture
 prisma/
-  schema.prisma   # User, Profile, Job, Application, Resume, CoverLetter, and friends
+  schema.prisma   # User, Profile, Job, Application, Resume, CoverLetter, InterviewPrep,
+                  # AtsReport, QuestionnaireAnswer, Insight, DailyBriefing, Notification
 ```
 
 Every data view goes through `StateWrapper`

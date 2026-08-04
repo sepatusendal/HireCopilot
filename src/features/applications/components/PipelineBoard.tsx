@@ -9,9 +9,10 @@ import type { ApplicationWithJob } from "@/features/applications/components/Appl
 
 interface PipelineBoardProps {
   applicationsByStatus: Record<ApplicationStatus, ApplicationWithJob[]>;
+  projectsById: Record<string, { title: string; category: string }>;
 }
 
-export function PipelineBoard({ applicationsByStatus }: PipelineBoardProps) {
+export function PipelineBoard({ applicationsByStatus, projectsById }: PipelineBoardProps) {
   const [tab, setTab] = useState<"active" | "closed">("active");
   const statuses = tab === "active" ? ACTIVE_STATUSES : CLOSED_STATUSES;
 
@@ -28,7 +29,7 @@ export function PipelineBoard({ applicationsByStatus }: PipelineBoardProps) {
 
       <div className="flex gap-4 overflow-x-auto pb-4">
         {statuses.map((status) => (
-          <PipelineColumn key={status} status={status} applications={applicationsByStatus[status]} />
+          <PipelineColumn key={status} status={status} applications={applicationsByStatus[status]} projectsById={projectsById} />
         ))}
       </div>
     </div>
